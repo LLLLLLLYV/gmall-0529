@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>主界面</title>
+</head>
+<body>
+<table id="attrListDg" class="easyui-datagrid" style="width:100%;height:100%"
+       data-options="url:'',fitColumns:true,singleSelect:true,toolbar:'#tb',method:'get'">
+    <thead>
+    <tr>
+        <th data-options="field:'id',width:'20%'">属性id</th>
+        <th data-options="field:'attrName',width:'80%'">属性名</th>
+    </tr>
+    </thead>
+</table>
+
+    <div id="tb">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addAttrInfo()">添加</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editAttrInfo()">编辑</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+        <br/>
+        一级分类：<input id="c1" class="easyui-combobox" name="dept"
+           data-options="valueField:'id',textField:'name',url:'basecatalog/1/list.json',
+            onSelect: function(rec){
+            var url = 'basecatalog/2/list.json?id='+rec.id;
+            $('#c2').combobox('reload', url);
+            $('#c2').combobox('clear');
+            $('#c3').combobox('clear');
+        }
+        " />
+
+        二级分类：<input id="c2" class="easyui-combobox" name="dept"
+               data-options="valueField:'id',textField:'name',
+               onSelect: function(rec){
+                    var url ='basecatalog/3/list.json?id='+rec.id;
+                    $('#c3').combobox('clear');
+                    $('#c3').combobox('reload', url);
+                }" />
+
+        三级分类：<input id="c3" class="easyui-combobox" name="dept"
+               data-options="valueField:'id',textField:'name',
+               onSelect: function(rec){
+                    $('#attrListDg').datagrid({
+                        url:'basecatalog/attrsInfo.json?id='+rec.id
+                    });
+               }" />
+        <a href="#" onclick="refreshTable()" class="easyui-linkbutton" iconCls="icon-search" >刷新属性列表</a>
+        <br/>
+    </div>
+
+</body>
+<script language="JavaScript">
+    function refreshTable() {
+        var c3Id = $("#c3").combobox('getValue');
+
+        $('#attrListDg').datagrid({
+            url:'basecatalog/attrsInfo.json?id='+c3Id
+        });
+    }
+
+</script>
+</html>
