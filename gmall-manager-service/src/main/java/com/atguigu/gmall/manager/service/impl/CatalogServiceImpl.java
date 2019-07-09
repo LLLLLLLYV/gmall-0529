@@ -10,9 +10,9 @@ import com.atguigu.gmall.manager.mapper.BaseCatalog2Mapper;
 import com.atguigu.gmall.manager.mapper.BaseCatalog3Mapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
 @Service
 public class CatalogServiceImpl implements CatalogService {
     @Autowired

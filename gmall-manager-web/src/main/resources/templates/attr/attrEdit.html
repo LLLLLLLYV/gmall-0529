@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="attrDlg" class="easyui-dialog" title="平台属性编辑" style="width:600px;height:400px;"
+     data-options="iconCls:'icon-save',resizable:true,modal:true,buttons:'#bb'
+    ,closed:true">
+        <br/>
+        平台属性名称：
+        <!--选中的info数据的回显-->
+        <input id ="attrName" name="attrName" class="easyui-textbox" data-options="iconCls:''" style="width:100px">
+        <input id="attrId" name="id" type="hidden" >
+        <input id="catalog3Id" name="catalog3Id" type="hidden" >
+        <br/>
+        <br/>
+        <!--表格-->
+        <table id="attrEditDg" class="easyui-datagrid" style="width:100%;height:100%"
+               data-options="title:'平台属性值列表',url:'',fitColumns:true,singleSelect:true,method:'get'">
+
+        </table>
+    </div>
+
+
+
+    <div id="bb">
+        <a href="#" class="easyui-linkbutton" onclick="saveAttrInfoAndValue()">保存</a>
+        <a href="#" class="easyui-linkbutton" onclick="$('#attrDlg').dialog('close')">关闭</a>
+    </div>
+
+<script language="JavaScript">
+    
+    /*对弹框内容保存*/
+    function saveAttrInfoAndValue() {
+        /*保存info和value数据*/
+        var attrInfoAndValue = {};
+        /*获取info的id和attrName,并保存到对象中*/
+        var infoId = $("#attrId").val();
+        if(infoId !=null){
+            attrInfoAndValue.id = $("#attrId").val();
+            attrInfoAndValue.attrName = $("#attrName").textbox('getValue');
+            attrInfoAndValue.id = infoId;
+            attrInfoAndValue.catalog3Id = $("#catalog3Id").val();
+            /*获取value的数据,并保存到对象中*/
+            attrInfoAndValue.attrValues = $("#attrEditDg").datagrid('getRows');
+        } else {
+            attrInfoAndValue.catalog3Id = $("#catalog3Id").val();
+            attrInfoAndValue.attrInfos = $("#attrEditDg").datagrid('getRows');
+        }
+
+        $.ajax({
+            url:'attr/updates',
+            type:"POST",
+            contentType:"application/json",//提交的数据的格式为json
+            data:JSON.stringify(attrInfoAndValue),//将attrInfoAndValue对象转换为json字符串
+            processData:false,//默认用k=v方式处理数据，取消默认方式
+            success:function(result) {
+                /*保存成功，关闭弹框并刷新三级分类下的info信息*/
+                $('#attrDlg').dialog('close');
+                refreshTable();
+            },
+            error:function(result) {
+                alert("GG");
+            }
+
+
+        });
+    }
+    
+    /*单元格编辑*/
+    var editIndex = undefined;
+    function endEditing(){
+        if (editIndex == undefined){return true}
+        if ($('#attrEditDg').datagrid('validateRow', editIndex)){
+            $('#attrEditDg').datagrid('endEdit', editIndex);
+            editIndex = undefined;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    function onClickCell(index, field){
+        if (endEditing()){
+            $('#attrEditDg').datagrid('selectRow', index)
+                .datagrid('editCell', {index:index,field:field});
+            editIndex = index;
+        }
+    }
+
+</script>
+
+</body>
+</html>

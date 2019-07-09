@@ -26,9 +26,16 @@
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
+
+        <!--整合redis-->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
+        </dependency>
+        <!--引入redis的starter，redis能自动配置-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
     </dependencies>
 

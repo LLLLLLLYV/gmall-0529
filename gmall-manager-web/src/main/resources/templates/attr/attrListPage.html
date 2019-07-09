@@ -1,25 +1,31 @@
 <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>主界面</title>
 </head>
 <body>
+<!--表格-->
 <table id="attrListDg" class="easyui-datagrid" style="width:100%;height:100%"
        data-options="url:'',fitColumns:true,singleSelect:true,toolbar:'#tb',method:'get'">
     <thead>
+    <!--表格的标题-->
     <tr>
         <th data-options="field:'id',width:'20%'">属性id</th>
         <th data-options="field:'attrName',width:'80%'">属性名</th>
     </tr>
     </thead>
 </table>
-
+    <!--表格的工具栏-->
     <div id="tb">
         <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addAttrInfo()">添加</a>
         <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editAttrInfo()">编辑</a>
         <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
         <br/>
+
+        <!--三个下拉菜单-->
         一级分类：<input id="c1" class="easyui-combobox" name="dept"
            data-options="valueField:'id',textField:'name',url:'basecatalog/1/list.json',
             onSelect: function(rec){
@@ -49,8 +55,12 @@
         <br/>
     </div>
 
+    <!--引入弹框页面-->
+    <div th:include="attr/attrEdit"></div>
+
 </body>
 <script language="JavaScript">
+    /*刷新三级分类下的info信息*/
     function refreshTable() {
         var c3Id = $("#c3").combobox('getValue');
 
@@ -58,6 +68,150 @@
             url:'basecatalog/attrsInfo.json?id='+c3Id
         });
     }
+    /*添加弹框*/
+    function addAttrInfo() {
+        /*判断是否选择3级目录，如果选择了，则打开，没选择 ，则提示*/
+        if(getCatalog3Info()==null) {
+            $.messager.alert('警告','请先选择3级分类');
+
+        } else {
+            /*打开对话框窗口*/
+            $("#attrDlg").dialog('open');
+            /*表格的标题栏和工具栏*/
+            $('#attrEditDg').datagrid({
+                singleSelect:true,
+
+                onDblClickCell:onClickCell,
+                columns:[[
+                    {field:'id',title:'编号',width:'30%'},
+                    {field:'attrName',title:'名称',width:'70%',
+                        editor: {
+                            /*允许修改单元格*/
+                            type: 'validatebox', options: { required: true}  //必填项
+                            //options指的是对这个type组件的设置
+                            //type：能写的值就是form里面的表单组件名
+                            //options：能写的值就是表单组件的data-options设置项
+                        }
+                    },
+                ]],
+                toolbar: [{
+                    text:'增加',
+                    iconCls: 'icon-add',
+                    handler: function(){
+                        $('#attrEditDg').datagrid('appendRow',{
+                            id:'',
+                            attrName:''
+                        });
+                    }
+                },'-',{
+                    text:'删除',
+                    iconCls: 'icon-remove',
+                    handler: function(){
+                        var data = $('#attrEditDg').datagrid('getSelected');
+                        if(data == null) {
+                            $.messager.alert('警告','请选择要删除的行');
+                        } else{
+                            $.messager.confirm('确认是否删除此行','您确认想要删除记录吗？',function(r){
+                                if (r){
+                                    var index = $('#attrEditDg').datagrid('getRowIndex',data);
+                                    $('#attrEditDg').datagrid('deleteRow',index);
+                                }
+                            });
+
+                        }
+                    }
+                }]
+
+            });
+        }
+    }
+    /*编辑弹框*/
+    function editAttrInfo() {
+
+        if(getCatalog3Info()!=null) {
+            if(getAttrInfo()==null){
+                $.messager.alert('警告','请先选择平台属性');
+            } else {
+                /*弹出对话框*/
+                $("#attrDlg").dialog('open');
+                var attrInfo = getAttrInfo();
+                /*在对话框的文本框中回显数据*/
+                $("#attrId").val(attrInfo.id);
+                $("#catalog3Id").val(getCatalog3Info().id);
+                $("#attrName").textbox('setValue',attrInfo.attrName);
+
+                /*刷新平台属性的属性列表*/
+                $("#attrEditDg").datagrid({
+                    /*查询指定infoId的value*/
+                    url:'attr/attrValue/'+attrInfo.id,
+                    /*只能选中一行表格*/
+                    singleSelect:true,
+
+                    /*双击单元格能编辑单元格内容，双击其他单元格编辑成功*/
+                    onDblClickCell:onClickCell,
+                    /*表格的标题栏*/
+                    columns:[[
+                        {field:'id',title:'属性Id',width:'30%'},
+                        {field:'valueName',title:'属性名',width:'70%',
+                            editor: {
+                                /*允许修改单元格*/
+                                type: 'validatebox', options: { required: true}  //必填项
+                                //options指的是对这个type组件的设置
+                                //type：能写的值就是form里面的表单组件名
+                                //options：能写的值就是表单组件的data-options设置项
+                            }
+                        }
+                    ]],
+                    /*表格的工具栏*/
+                    toolbar: [{
+                        text:'增加',
+                        iconCls: 'icon-add',
+                        handler: function(){
+                            $("#attrEditDg").datagrid('appendRow',{
+                                id:'',
+                                valueName:'',
+                                attrId:getAttrInfo().id
+                            });
+                        }
+                    },'-',{
+                        text:'删除',
+                        iconCls: 'icon-remove',
+                        handler: function(){
+                            var data = $("#attrEditDg").datagrid('getSelected');
+                            if(data!=null) {
+                                var index = $("#attrEditDg").datagrid('getRowIndex',data);
+                                $("#attrEditDg").datagrid('deleteRow',index);
+                            } else {
+                                $.messager.alert('警告','选择要删除的行');
+                            }
+
+                        }
+                    }]
+
+
+                });
+
+            }
+        } else {
+            $.messager.alert('警告','请先选择3级分类');
+        }
+    }
+    /*返回3级分类信息*/
+    function getCatalog3Info() {
+        var id = $("#c3").combobox('getValue');
+        var text = $("#c3").combobox('getText');
+        var info = {id:id,name:text};
+        /*如果id为空字符串，则说明没有选3级目录，返回null*/
+        if(id==""){
+            return null;
+        }
+        return info;
+    }
+    /*返回选中的属性信息*/
+    function getAttrInfo() {
+        return $("#attrListDg").datagrid('getSelected');
+    }
+
 
 </script>
 </html>

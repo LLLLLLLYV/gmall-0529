@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<!-----------------弹出框----------------------------->
+<div id="sku_dlg" class="easyui-dialog" title="编辑sku" style="width:700px;height:520px;"
+     closed="true" data-options="iconCls:'icon-save',resizable:true,modal:false" buttons="#skuBtns">
+    <form id="skuForm">
+        <br/>
+        <label>sku名称:</label>
+        <input id="skuName" name="skuName" class="easyui-textbox" data-options="" style="width:300px;"/>
+        <br/><br/>
+        <label>商品价格:</label>
+        <input id="price" name="price" class="easyui-numberbox" data-options="min:0,precision:2" style="width:300px;"/>
+        <br/><br/>
+        <label>商品重量（千克):</label>
+        <input id="weight" name="weight" class="easyui-numberbox" data-options="min:0,precision:2"
+               style="width:300px;"/>
+        <br/><br/>
+        <label>商品规格描述:</label>
+        <input id="skuDesc" name="skuDesc" class="easyui-textbox" data-options="multiline:true"
+               style="width:500px;height:100px"/>
+        <input id="spuIdForSku" name="spuId" type="hidden"/>
+
+        <input id="skuId" name="id" type="hidden"/>
+
+        <input id="catalog3IdForSku" name="catalog3Id" type="hidden"/>
+        <br/><br/>
+
+        <input id="skuInfo" name="skuInfo" type="hidden"/>
+
+
+        <div id="attrInfoGroup" title="平台属性" class="easyui-panel" style="padding:5px;">
+        </div>
+
+        <div id="spuSaleAttrGroup" title="销售属性" class="easyui-panel" style="padding:5px;">
+
+        </div>
+
+
+        <!----------------商品图片列表 ----------------------->
+
+        <table id="skuImgDg" class="easyui-datagrid" title="商品图片列表"
+               data-options="singleSelect:false,selectOnCheck:false,checkOnSelect:false,
+               idField:'id',method:'get'">
+
+            <thead>
+                <tr>
+                    <!-- id  spu_id  img_name  img_url is_default -->
+                    <th data-options="field:'needSave',width:100,checkbox:true"></th>
+                    <th data-options="field:'id',width:100">图片编号</th>
+                    <th data-options="field:'spuId',width:100,hidden:true">图片所属spuId</th>
+                    <th data-options="field:'imgName',width:100">图片名</th>
+                    <th data-options="field:'imgUrl',width:100,formatter:skuImageInfoShowFormatter">图片信息</th>
+                    <th data-options="field:'isDefault',width:100,formatter:skuImageCheckCellFormatter">是否默认</th>
+                </tr>
+            </thead>
+        </table>
+
+        <br/><br/>
+
+
+        <!-------------->
+
+
+    </form>
+</div>
+<!----------------弹出框的按钮组----------------------->
+<div id="skuBtns">
+    <a href="#" class="easyui-linkbutton" onclick="saveSku()">保 存</a>
+    <a href="#" class="easyui-linkbutton" onclick="$('#sku_dlg').dialog('close')">关 闭</a>
+</div>
+
+
+<script th:inline="javascript">
+    //保存sku信息
+    function saveSku() {
+        //1.组装数据
+        var bigSku = {}
+        bigSku.catalog3Id = getSpuCatalog3Info().id;
+        bigSku.price = $("#price").numberbox('getValue');
+        bigSku.skuDefaultImg = '';
+        bigSku.skuName = $("#skuName").textbox('getValue');
+        if($(".imgRadio:checked").length==0) {
+            $.messager.alert("警告","请选择默认图片");
+            return ;
+        } else {
+            bigSku.skuDefaultImg = $(".imgRadio:checked").parents("tr")
+                .find("td[field='imgUrl']").find("img").attr("src");
+        }
+        bigSku.skuDesc = $("#skuDesc").textbox("getValue");
+        bigSku.spuId = getSelectdSpuInfoRow().id;
+        bigSku.weight = $("#weight").numberbox('getValue');
+        bigSku.skuAttrValues = getSelectSkuAttrValues();
+        bigSku.skuImages = getSelectSkuImages();
+        bigSku.skuSaleAttrValues = getSelectSkuSaleAttrValues();
+        console.log(bigSku);
+        //提交数据
+        $.ajax({
+            url:'sku/skuBigSave',
+            type:'POST',
+            data:JSON.stringify(bigSku),
+            contentType:"application/json",
+            processData:false,
+            success:function (result) {
+                $("#sku_dlg").dialog('close');
+            },
+            error:function () {
+                alert("GG");
+            }
+        })
+    }
+
+
+    //返回选中的所有销售属性信息
+    function getSelectSkuSaleAttrValues() {
+        var SkuSaleAttrValuesArray = new Array();
+        $.each($(".attrValueGroupLabel"),function () {
+            var obj = {};
+            obj.saleAttrId = $(this).find("label[attrid]").attr("attrid") //dom元素
+            obj.saleAttrName = $(this).find("label[attrid]").text();
+            obj.saleAttrValueId = $(this).find("option:selected").val();
+            obj.saleAttrValueName = $(this).find("option:selected").text();
+            SkuSaleAttrValuesArray.push(obj);
+        })
+        return SkuSaleAttrValuesArray;
+    }
+    //返回选中的所有平台属性信息
+    function getSelectSkuAttrValues() {
+        //1.先找到平台属性的lable
+        var skuAttrValuesArray = new Array();
+        $.each($(".infoGroupLable"),function () {
+            var obj = {};
+            obj.attrId = $(this).find("lable[attrid]").attr("attrid");
+            obj.valueId = $(this).find("option:selected").val();
+            skuAttrValuesArray.push(obj);
+        })
+        return skuAttrValuesArray;
+    }
+    //返回所有图片
+    function getSelectSkuImages() {
+        var imgs = $("#skuImgDg").datagrid('getChecked');
+        var imgsResult = new Array();
+        $.each(imgs,function () {
+            var imgObg = {};
+            imgObg.imgName = this.imgName
+            imgObg.imgUrl = this.imgUrl
+            imgObg.spuImgId = this.id
+            //被勾选的默认图片
+            imgObg.isDefault = $("td[field='id']:contains("+imgObg.spuImgId+")").parents("tr")
+                .find("input[type='radio']:checked").length;
+            imgsResult.push(imgObg);
+        })
+
+        return imgsResult;
+    }
+    
+    //是否默认图片格式化选择
+   function skuImageCheckCellFormatter(value,row,index) {
+       if(value == 1){
+           return "<input class='imgRadio' name='isDefault' type='radio' checked/>";
+       }else{
+           return "<input class='imgRadio' name='isDefault' type='radio'/>";
+       }
+   }
+    function skuImageInfoShowFormatter(value,row,index) {
+        return "<img style='width:100px;height:auto' src='"+value+"'/>"
+    }
+
+
+</script>
+
+</body>
+</html>

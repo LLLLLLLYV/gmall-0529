@@ -8,7 +8,6 @@ import com.atguigu.gamll.manager.BaseCatalog3;
 import com.atguigu.gmall.manager.manager.BaseAttrInfoService;
 import com.atguigu.gmall.manager.manager.CatalogService;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -22,6 +21,7 @@ public class BaseCatalogRestController {
 
     @Reference
     CatalogService catalogService;
+
     @Reference
     BaseAttrInfoService baseAttrInfoService;
 

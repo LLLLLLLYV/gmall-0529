@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class ManagerController {
 
-    @RequestMapping("index")
+    @RequestMapping("main")
     public String index() {
-        return "index";
+        return "main";
     }
 }

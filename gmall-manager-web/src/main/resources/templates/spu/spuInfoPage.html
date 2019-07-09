@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>spu信息编辑页面</title>
+</head>
+<body>
+
+<!-----------------弹出框----------------------------->
+<div id="spu_dlg" class="easyui-dialog" title="编辑spu" style="width:700px;height:520px;"
+     closed="true"  data-options="iconCls:'icon-save',resizable:true,modal:false" buttons="#spuBtns" >
+    <form id="spuForm">
+        <br/>
+        <label>spu名称:</label>
+        <input  id="spuName" name="spuName" class="easyui-textbox" data-options="" style="width:300px;"/>
+        <br/><br/>
+        <label>spu描述:</label>
+        <input  id="description" name="description" class="easyui-textbox" data-options="multiline:true" style="width:500px;height:100px"/>
+
+        <input id="spuId" name="spuId" type="hidden"/>
+        <br/><br/>
+
+        <!----------------商品图片列表 ----------------------->
+
+        <table id="spuImgDg" class="easyui-datagrid" title="商品图片列表"
+               data-options="singleSelect:true,method:'get',toolbar:'#spuImgTootbar',
+               idField:'id',view:detailview,detailFormatter:spuImgTableDetailFormatter " >
+            <thead>
+                <tr>
+                    <th data-options="field:'id',width:100">图片id</th>
+                    <th data-options="field:'imgName',width:200">图片名称</th>
+                    <th data-options="field:'imgUrl',width:100,align:'right',hidden:true">图片url</th>
+					<th data-options="field:'process',width:200,formatter:supImgProcessFormatter">上传进度</th>
+                    <th data-options="field:'status',width:100,formatter:supImgStatusFormatter">图片状态</th>
+                </tr>
+            </thead>
+        </table>
+
+        <!----------------图片列表工具栏----------------------->
+        <div id="spuImgTootbar" style="padding:5px;height:auto"  >
+            <div style="margin-bottom:5px">
+                <a href="#" id="spuImgAddBtn" class="easyui-linkbutton" iconCls="icon-add" plain="true">添加图片</a>
+                <a href="#" id="spuImgUploadBtn" class="easyui-linkbutton" iconCls="icon-save" plain="true" >图片上传</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+            </div>
+        </div>
+
+        <br/><br/>
+        <!----------------销售属性列表---------------------------->
+        <table id="spuSaleAttrDg" class="easyui-datagrid" title="销售属性列表"
+               data-options="singleSelect:true,method:'get',toolbar:'#spuSaleAttrTootbar'" >
+            <thead>
+                <tr>
+                    <th data-options="field:'id',width:100">销售属性id</th>
+                    <th data-options="field:'saleAttrId',width:300">销售属性Id</th>
+                    <th data-options="field:'spuId',width:300,hidden:true">spuId</th>
+                    <th data-options="field:'saleAttrName',width:300">销售属性名称</th>
+                    <th data-options="field:'saleAttrValues',width:300,hidden:true">销售所有值</th>
+                </tr>
+            </thead>
+        </table>
+
+        <!----------------销售属性列表工具栏----------------------->
+        <div id="spuSaleAttrTootbar" style="padding:5px;height:auto"  >
+            <div style="margin-bottom:5px">
+                <a href="#" id="spuSaleAttrAddBtn" onclick="spuSaleAttrAddBtn()" class="easyui-linkbutton" iconCls="icon-add" plain="true">添加销售属性</a>
+                <a href="#" id="spuSaleAttrEditBtn" onclick="spuSaleAttrAddBtn()" class="easyui-linkbutton" iconCls="icon-edit" plain="true">编辑销售属性</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" >删除</a>
+            </div>
+        </div>
+
+
+    </form>
+</div>
+
+<div th:include="spu/spuSaleAttrPage"></div>
+<!----------------弹出框的按钮组----------------------->
+<div id="spuBtns">
+    <a href="#" class="easyui-linkbutton" onclick="saveAllSpuInfos()">保 存</a>
+    <a href="#" class="easyui-linkbutton" onclick="$('#spu_dlg').dialog('close')">关 闭</a>
+</div>
+
+<script language="javascript">
+    /*<![CDATA[*/
+    /*保存所有spu信息*/
+    function saveAllSpuInfos() {
+        var spuName = $("#spuName").textbox('getValue');//商品名
+        var description = $("#description").textbox('getValue');//商品描述
+        var catalog3Id = getSpuCatalog3Info().id;//三级分类id
+        var spuImages = $("#spuImgDg").datagrid('getRows');//所有图片
+        var spuSaleAttrs = $("#spuSaleAttrDg").datagrid('getRows');//所有属性值
+        $.each(spuImages,function () {
+            if(isNaN(this.id)){
+                this.id = null;
+            }
+        })
+        var spuInfo = {
+            spuName:spuName,
+            description:description,
+            catalog3Id:catalog3Id,
+            spuImages:spuImages,
+            spuSaleAttrs:spuSaleAttrs
+        }
+        var jsonData = JSON.stringify(spuInfo);
+
+        $.ajax({
+            url:'spu/bigSave',
+            type:'POST',
+            data:jsonData,
+            contentType:'application/json',
+            processData:false,
+            success:function (result) {
+                $("#spu_dlg").dialog('close');
+                refreshSpuListTable(null)
+            },
+            error:function () {
+                alert("GG");
+            }
+        });
+
+    }
+    /*打开增加销售属性弹窗*/
+   function spuSaleAttrAddBtn() {
+       $("#spuSaleAttr_dlg").dialog('open');
+   }
+
+    /*上传图片*/
+    var uploader = WebUploader.create({
+
+        // 选完文件后，是否自动上传。
+        auto: false,
+
+        // swf文件路径
+        swf: '/webuploader/Uploader.swf',
+
+        // 文件接收服务端。
+        server: 'file/upload',
+
+        // 选择文件的按钮。可选。
+        // 内部根据当前运行是创建，可能是input元素，也可能是flash.
+        pick: '#spuImgAddBtn',
+
+        // 只允许选择图片文件。
+        accept: {
+            title: 'Images',
+            extensions: 'gif,jpg,jpeg,bmp,png',
+            mimeTypes: 'image/*'
+        }
+    });
+    /*点击上传按钮，选择上传图片的弹框的大小*/
+    $("#spuImgAddBtn div:eq(0)").css({
+        width:'100%',
+        height:'100%'
+    });
+
+    // 当有文件添加进来的时候在图片的table中显示图片信息
+    /*
+    *   <th data-options="field:'id',width:100">图片id</th>
+        <th data-options="field:'imgName',width:200">图片名称</th>
+        <th data-options="field:'imgUrl',width:100,align:'right',hidden:true">图片url</th>
+        <th data-options="field:'process',width:200">上传进度</th>
+        <th data-options="field:'status',width:100">图片状态</th>
+     */
+    uploader.on( 'fileQueued', function( file ) {
+        $("#spuImgDg").datagrid('appendRow',{
+            id:file.id,
+            imgName:file.name,
+            imgUrl:'',
+            process:0,
+            status:"等待上传"
+        });
+    });
+
+    // 文件上传过程中创建进度条实时显示。
+    uploader.on( 'uploadProgress', function( file, percentage ) {
+            /*修改上传进度*/
+
+        var precent = Math.round(percentage*10000)/100;
+        var index = $("#spuImgDg").datagrid('getRowIndex',file.id);
+        $("#spuImgDg").datagrid('updateRow',{
+            index:index,
+            row:{
+                process:precent,
+                status:'正在上传'
+            }
+        });
+    });
+
+    // 文件上传成功，给item添加成功class, 用样式标记上传成功。
+    uploader.on( 'uploadSuccess', function( file,response ) {
+        var index = $("#spuImgDg").datagrid('getRowIndex',file.id);
+        $("#spuImgDg").datagrid('updateRow',{
+            index:index,
+            row:{
+                status:'上传成功',
+                imgUrl:response._raw
+            }
+
+        })
+
+    });
+    /*
+    value:本来要显示的数据
+    row:当前行的所有
+
+    上传进度*/
+    function supImgProcessFormatter(value,row,index) {
+        var progressbar = $("<div></div>").progressbar({
+            value:value
+        });
+        var html_content = $("<div></div>").append(progressbar).html();
+        return html_content;
+    }
+    /*上传状态*/
+    function supImgStatusFormatter(value,row,index) {
+        return "<lable style='color:blue'>"+value+"</lable>"
+    }
+    /*表格详细视图*/
+    function spuImgTableDetailFormatter(rowInde,rowData) {
+        return "<img src='"+rowData.imgUrl+"' style='width: 150px;height: auto'>"
+    }
+
+    $("#spuImgUploadBtn").click(function () {
+        uploader.upload();
+    })
+    /*]]>*/
+</script>
+</body>
+</html>

@@ -10,7 +10,23 @@ import java.util.List;
  */
 public interface BaseAttrInfoService {
 
-    public List<BaseAttrInfo> getAllBaseAttrInfoByC3Id(Integer C3Id);
+    /**
+     * 根据AttrInfo对象，保存或修改AttrInfo和AttrValue
+     * @param baseAttrInfo
+     */
+    void saveOrUpdateToAttrInfoAndAttrValue(BaseAttrInfo baseAttrInfo);
 
-    public List<BaseAttrValue> getBaseAttrValueByAttrId(Integer BaseAttrInfoid);
+    /**
+     * 根据catalog3Id查询对应的info信息
+     * @param C3Id
+     * @return
+     */
+    List<BaseAttrInfo> getAllBaseAttrInfoByC3Id(Integer C3Id);
+
+    /**
+     * 根据attrInfoId查询对应的value信息
+     * @param BaseAttrInfoid
+     * @return
+     */
+    List<BaseAttrValue> getBaseAttrValueByAttrId(Integer BaseAttrInfoid);
 }

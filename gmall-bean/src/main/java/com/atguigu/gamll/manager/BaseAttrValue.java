@@ -12,9 +12,8 @@ public class BaseAttrValue implements Serializable{
     @TableId(type = IdType.AUTO)
     private Integer id;
 
-    private String attrName;
+    private String valueName;
 
     private Integer attrId;
 
-    private String isEnable;
 }
